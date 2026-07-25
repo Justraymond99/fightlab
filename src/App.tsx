@@ -1,7 +1,14 @@
 import { useGamepad } from './hooks/useGamepad';
 
 function App() {
-  const { connected, gamepadName, inputs, clearInputs } = useGamepad();
+  const {
+    connected,
+    gamepadName,
+    inputs,
+    commands,
+    diagnostics,
+    clearInputs,
+  } = useGamepad();
 
   return (
     <main className="app-shell">
@@ -43,51 +50,99 @@ function App() {
 
             <label>
               <span>Drill</span>
-              <select defaultValue="Combo Trainer">
+              <select defaultValue="Motion Trainer">
+                <option>Motion Trainer</option>
                 <option>Combo Trainer</option>
                 <option>Hit Confirm Trainer</option>
                 <option>Anti-Air Trainer</option>
-                <option>Whiff Punish Trainer</option>
               </select>
             </label>
           </div>
 
-          <button className="primary-action" type="button">
-            Start training
+          <button className="primary-action" type="button" disabled={!connected}>
+            {connected ? 'Start training' : 'Connect controller'}
           </button>
         </section>
 
         <section className="panel stats-panel">
           <div>
-            <p className="panel-label">Today&apos;s stats</p>
-            <h2>Session overview</h2>
+            <p className="panel-label">Live recognition</p>
+            <h2>Latest command</h2>
           </div>
 
-          <dl className="stats-grid">
-            <div>
-              <dt>Accuracy</dt>
-              <dd>--</dd>
+          {commands[0] ? (
+            <div className="latest-command">
+              <strong>{commands[0].notation}</strong>
+              <span>{commands[0].motion}</span>
+              <small>{Math.round(commands[0].durationMs)} ms</small>
             </div>
-            <div>
-              <dt>Reaction</dt>
-              <dd>--</dd>
+          ) : (
+            <div className="latest-command empty-command">
+              <strong>--</strong>
+              <span>Perform a motion + attack</span>
             </div>
+          )}
+        </section>
+      </section>
+
+      <section className="diagnostics-grid">
+        <section className="panel diagnostics-panel">
+          <div className="panel-heading">
             <div>
-              <dt>Successes</dt>
-              <dd>0</dd>
+              <p className="panel-label">Controller diagnostics</p>
+              <h2>Raw device state</h2>
             </div>
+            <span className="direction-readout">{diagnostics?.direction ?? 5}</span>
+          </div>
+
+          {diagnostics ? (
+            <dl className="diagnostics-list">
+              <div>
+                <dt>Mapping</dt>
+                <dd>{diagnostics.mapping}</dd>
+              </div>
+              <div>
+                <dt>Pressed buttons</dt>
+                <dd>{diagnostics.pressedButtons.join(', ') || 'None'}</dd>
+              </div>
+              <div>
+                <dt>Axes</dt>
+                <dd>{diagnostics.axes.map((axis) => axis.toFixed(2)).join(', ')}</dd>
+              </div>
+            </dl>
+          ) : (
+            <div className="compact-empty">Connect your DualSense or Haute42.</div>
+          )}
+        </section>
+
+        <section className="panel command-panel">
+          <div className="panel-heading">
             <div>
-              <dt>Drops</dt>
-              <dd>0</dd>
+              <p className="panel-label">Parsed output</p>
+              <h2>Command history</h2>
             </div>
-          </dl>
+          </div>
+
+          {commands.length === 0 ? (
+            <div className="compact-empty">Try 236 + LP, 214 + LK, or 623 + HP.</div>
+          ) : (
+            <ol className="command-list">
+              {commands.map((command) => (
+                <li key={command.id}>
+                  <strong>{command.notation}</strong>
+                  <span>{command.motion}</span>
+                  <small>{Math.round(command.durationMs)} ms</small>
+                </li>
+              ))}
+            </ol>
+          )}
         </section>
       </section>
 
       <section className="panel input-panel">
         <div className="panel-heading">
           <div>
-            <p className="panel-label">Live feed</p>
+            <p className="panel-label">Normalized feed</p>
             <h2>Input history</h2>
           </div>
           <button className="secondary-action" type="button" onClick={clearInputs} disabled={inputs.length === 0}>
@@ -98,13 +153,14 @@ function App() {
         {inputs.length === 0 ? (
           <div className="empty-state">
             <strong>No inputs yet</strong>
-            <span>Directions will appear as numpad notation.</span>
+            <span>Directions and attack buttons will appear here.</span>
           </div>
         ) : (
           <ol className="input-list">
-            {inputs.map((input) => (
+            {inputs.slice(0, 30).map((input) => (
               <li key={input.id}>
-                <span className="input-token">{input.label}</span>
+                <span className="input-token">{input.value}</span>
+                <span className="input-kind">{input.kind}</span>
                 <span className="input-time">{Math.round(input.timestamp)} ms</span>
               </li>
             ))}
