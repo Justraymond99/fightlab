@@ -1,4 +1,5 @@
 import { useGamepad } from './hooks/useGamepad';
+import './input-engine.css';
 
 function App() {
   const {
