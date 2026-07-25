@@ -10,6 +10,7 @@ function App() {
     diagnostics,
     clearInputs,
   } = useGamepad();
+  const latestCommand = commands[0];
 
   return (
     <main className="app-shell">
@@ -71,11 +72,17 @@ function App() {
             <h2>Latest command</h2>
           </div>
 
-          {commands[0] ? (
+          {latestCommand ? (
             <div className="latest-command">
-              <strong>{commands[0].notation}</strong>
-              <span>{commands[0].motion}</span>
-              <small>{Math.round(commands[0].durationMs)} ms</small>
+              <div className="command-grade" aria-label={`Grade ${latestCommand.grade.letter}`}>
+                {latestCommand.grade.letter}
+              </div>
+              <strong>{latestCommand.notation}</strong>
+              <span>{latestCommand.motion}</span>
+              <small>
+                {latestCommand.durationFrames}f · {Math.round(latestCommand.durationMs)} ms · {latestCommand.grade.score}%
+              </small>
+              <p>{latestCommand.grade.feedback}</p>
             </div>
           ) : (
             <div className="latest-command empty-command">
@@ -98,18 +105,11 @@ function App() {
 
           {diagnostics ? (
             <dl className="diagnostics-list">
-              <div>
-                <dt>Mapping</dt>
-                <dd>{diagnostics.mapping}</dd>
-              </div>
-              <div>
-                <dt>Pressed buttons</dt>
-                <dd>{diagnostics.pressedButtons.join(', ') || 'None'}</dd>
-              </div>
-              <div>
-                <dt>Axes</dt>
-                <dd>{diagnostics.axes.map((axis) => axis.toFixed(2)).join(', ')}</dd>
-              </div>
+              <div><dt>Mapping</dt><dd>{diagnostics.mapping}</dd></div>
+              <div><dt>Frame</dt><dd>{diagnostics.frame}</dd></div>
+              <div><dt>Polling</dt><dd>{diagnostics.pollingHz} Hz</dd></div>
+              <div><dt>Pressed buttons</dt><dd>{diagnostics.pressedButtons.join(', ') || 'None'}</dd></div>
+              <div><dt>Axes</dt><dd>{diagnostics.axes.map((axis) => axis.toFixed(2)).join(', ')}</dd></div>
             </dl>
           ) : (
             <div className="compact-empty">Connect your DualSense or Haute42.</div>
@@ -130,9 +130,10 @@ function App() {
             <ol className="command-list">
               {commands.map((command) => (
                 <li key={command.id}>
+                  <span className="history-grade">{command.grade.letter}</span>
                   <strong>{command.notation}</strong>
                   <span>{command.motion}</span>
-                  <small>{Math.round(command.durationMs)} ms</small>
+                  <small>{command.durationFrames}f · {command.grade.score}%</small>
                 </li>
               ))}
             </ol>
@@ -162,7 +163,7 @@ function App() {
               <li key={input.id}>
                 <span className="input-token">{input.value}</span>
                 <span className="input-kind">{input.kind}</span>
-                <span className="input-time">{Math.round(input.timestamp)} ms</span>
+                <span className="input-time">Frame {input.frame}</span>
               </li>
             ))}
           </ol>
