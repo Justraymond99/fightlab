@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
+import { FrameClock } from '../engine/input/FrameClock';
+import { InputBuffer } from '../engine/input/InputBuffer';
 import { detectCommand } from '../engine/motionParser';
 import type {
   AttackButton,
@@ -17,7 +19,6 @@ const ATTACK_BUTTON_MAP: Partial<Record<number, AttackButton>> = {
   7: 'HK',
 };
 
-const MAX_INPUTS = 120;
 const MAX_COMMANDS = 20;
 const DEADZONE = 0.45;
 
@@ -26,14 +27,12 @@ function directionFromGamepad(gamepad: Gamepad): Direction {
   const dpadRight = gamepad.buttons[15]?.pressed ?? false;
   const dpadUp = gamepad.buttons[12]?.pressed ?? false;
   const dpadDown = gamepad.buttons[13]?.pressed ?? false;
-
   const axisX = gamepad.axes[0] ?? 0;
   const axisY = gamepad.axes[1] ?? 0;
   const left = dpadLeft || axisX < -DEADZONE;
   const right = dpadRight || axisX > DEADZONE;
   const up = dpadUp || axisY < -DEADZONE;
   const down = dpadDown || axisY > DEADZONE;
-
   const horizontal = left === right ? 0 : left ? -1 : 1;
   const vertical = up === down ? 0 : up ? -1 : 1;
   const map: Record<string, Direction> = {
@@ -47,7 +46,6 @@ function directionFromGamepad(gamepad: Gamepad): Direction {
     '0,1': 2,
     '1,1': 3,
   };
-
   return map[`${horizontal},${vertical}`];
 }
 
@@ -56,29 +54,36 @@ export function useGamepad() {
   const [inputs, setInputs] = useState<NormalizedInput[]>([]);
   const [commands, setCommands] = useState<DetectedCommand[]>([]);
   const [diagnostics, setDiagnostics] = useState<ControllerDiagnostics | null>(null);
-  const inputBuffer = useRef<NormalizedInput[]>([]);
+  const inputBuffer = useRef(new InputBuffer(240));
+  const frameClock = useRef(new FrameClock(60));
   const previousButtons = useRef<boolean[]>([]);
   const previousDirection = useRef<Direction>(5);
+  const lastPollTimestamp = useRef<number | null>(null);
 
   useEffect(() => {
     let animationFrame = 0;
 
     const appendInput = (input: NormalizedInput) => {
-      inputBuffer.current = [...inputBuffer.current, input].slice(-MAX_INPUTS);
-      setInputs([...inputBuffer.current].reverse());
+      inputBuffer.current.push(input);
+      const chronologicalInputs = inputBuffer.current.toArray();
+      setInputs([...chronologicalInputs].reverse());
 
       if (input.kind === 'button') {
-        const command = detectCommand(inputBuffer.current, input);
+        const command = detectCommand(chronologicalInputs, input);
         if (command) {
           setCommands((current) => [command, ...current].slice(0, MAX_COMMANDS));
         }
       }
     };
 
-    const poll = () => {
+    const poll = (rafTimestamp: number) => {
       const gamepad = Array.from(navigator.getGamepads()).find(
         (candidate): candidate is Gamepad => Boolean(candidate?.connected),
       );
+      const frame = frameClock.current.tick(rafTimestamp);
+      const elapsed = lastPollTimestamp.current === null ? 0 : rafTimestamp - lastPollTimestamp.current;
+      const pollingHz = elapsed > 0 ? Math.round(1000 / elapsed) : 0;
+      lastPollTimestamp.current = rafTimestamp;
 
       if (!gamepad) {
         setGamepadName(null);
@@ -93,10 +98,11 @@ export function useGamepad() {
 
       if (direction !== previousDirection.current) {
         appendInput({
-          id: `direction-${now}`,
+          id: `direction-${frame}-${now}`,
           kind: 'direction',
           value: direction,
           timestamp: now,
+          frame,
         });
         previousDirection.current = direction;
       }
@@ -104,13 +110,13 @@ export function useGamepad() {
       gamepad.buttons.forEach((button, index) => {
         const wasPressed = previousButtons.current[index] ?? false;
         const attackButton = ATTACK_BUTTON_MAP[index];
-
         if (button.pressed && !wasPressed && attackButton) {
           appendInput({
-            id: `button-${index}-${now}`,
+            id: `button-${index}-${frame}-${now}`,
             kind: 'button',
             value: attackButton,
             timestamp: now,
+            frame,
           });
         }
       });
@@ -125,6 +131,8 @@ export function useGamepad() {
           .map((button, index) => (button.pressed ? index : -1))
           .filter((index) => index >= 0),
         direction,
+        frame,
+        pollingHz,
       });
 
       animationFrame = requestAnimationFrame(poll);
@@ -133,6 +141,8 @@ export function useGamepad() {
     const resetController = () => {
       previousButtons.current = [];
       previousDirection.current = 5;
+      lastPollTimestamp.current = null;
+      frameClock.current.reset();
       setGamepadName(null);
       setDiagnostics(null);
     };
@@ -147,7 +157,7 @@ export function useGamepad() {
   }, []);
 
   const clearInputs = () => {
-    inputBuffer.current = [];
+    inputBuffer.current.clear();
     setInputs([]);
     setCommands([]);
   };

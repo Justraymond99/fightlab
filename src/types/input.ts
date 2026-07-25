@@ -7,6 +7,23 @@ export type NormalizedInput = {
   kind: 'direction' | 'button';
   value: Direction | AttackButton;
   timestamp: number;
+  frame: number;
+};
+
+export type MotionDefinition = {
+  id: string;
+  name: string;
+  notation: string;
+  maxDurationMs: number;
+  maxDurationFrames: number;
+  allowExtraDirections: boolean;
+};
+
+export type ExecutionGrade = {
+  letter: 'S' | 'A' | 'B' | 'C' | 'D';
+  score: number;
+  label: string;
+  feedback: string;
 };
 
 export type DetectedCommand = {
@@ -15,7 +32,12 @@ export type DetectedCommand = {
   motion: string;
   button: AttackButton;
   timestamp: number;
+  frame: number;
   durationMs: number;
+  durationFrames: number;
+  confidence: number;
+  extraDirections: number;
+  grade: ExecutionGrade;
 };
 
 export type ControllerDiagnostics = {
@@ -25,4 +47,6 @@ export type ControllerDiagnostics = {
   axes: number[];
   pressedButtons: number[];
   direction: Direction;
+  frame: number;
+  pollingHz: number;
 };

@@ -1,38 +1,52 @@
-import type { AttackButton, DetectedCommand, Direction, NormalizedInput } from '../types/input';
-
-const MOTIONS = [
-  { sequence: '63214', name: 'Half Circle Back' },
-  { sequence: '41236', name: 'Half Circle Forward' },
-  { sequence: '623', name: 'Dragon Punch' },
-  { sequence: '421', name: 'Reverse Dragon Punch' },
-  { sequence: '236', name: 'Quarter Circle Forward' },
-  { sequence: '214', name: 'Quarter Circle Back' },
-] as const;
+import { gradeExecution } from './grading/ExecutionGrader';
+import { MOTION_DEFINITIONS } from './parser/motionDefinitions';
+import type {
+  AttackButton,
+  DetectedCommand,
+  Direction,
+  MotionDefinition,
+  NormalizedInput,
+} from '../types/input';
 
 const ATTACK_BUTTONS = new Set<AttackButton>(['LP', 'MP', 'HP', 'LK', 'MK', 'HK']);
-const MOTION_WINDOW_MS = 700;
 
-function collapseDirections(inputs: NormalizedInput[]): Direction[] {
-  const directions: Direction[] = [];
+function collapseDirections(inputs: NormalizedInput[]): NormalizedInput[] {
+  const directions: NormalizedInput[] = [];
 
   for (const input of inputs) {
     if (input.kind !== 'direction' || input.value === 5) continue;
-    const direction = input.value as Direction;
-    if (directions[directions.length - 1] !== direction) directions.push(direction);
+    if (directions[directions.length - 1]?.value !== input.value) directions.push(input);
   }
 
   return directions;
 }
 
-function containsSequence(directions: Direction[], sequence: string): boolean {
+function matchMotion(
+  directions: NormalizedInput[],
+  definition: MotionDefinition,
+): { matched: NormalizedInput[]; extraDirections: number } | null {
+  const expected = definition.notation.split('').map(Number) as Direction[];
+  const matched: NormalizedInput[] = [];
   let cursor = 0;
 
-  for (const direction of directions) {
-    if (String(direction) === sequence[cursor]) cursor += 1;
-    if (cursor === sequence.length) return true;
+  for (let index = 0; index < directions.length; index += 1) {
+    const input = directions[index];
+
+    if (input.value === expected[cursor]) {
+      matched.push(input);
+      cursor += 1;
+      if (cursor === expected.length) {
+        return {
+          matched,
+          extraDirections: Math.max(0, index + 1 - expected.length),
+        };
+      }
+    } else if (!definition.allowExtraDirections && cursor > 0) {
+      return null;
+    }
   }
 
-  return false;
+  return null;
 }
 
 export function detectCommand(
@@ -44,38 +58,42 @@ export function detectCommand(
   }
 
   const button = buttonInput.value as AttackButton;
-  const recentInputs = inputs.filter(
-    (input) => input.timestamp <= buttonInput.timestamp && buttonInput.timestamp - input.timestamp <= MOTION_WINDOW_MS,
-  );
-  const directions = collapseDirections(recentInputs);
 
-  for (const motion of MOTIONS) {
-    if (!containsSequence(directions, motion.sequence)) continue;
+  for (const definition of MOTION_DEFINITIONS) {
+    const recentInputs = inputs.filter(
+      (input) =>
+        input.timestamp <= buttonInput.timestamp &&
+        buttonInput.timestamp - input.timestamp <= definition.maxDurationMs,
+    );
+    const match = matchMotion(collapseDirections(recentInputs), definition);
+    if (!match) continue;
 
-    const firstDirection = recentInputs.find(
-      (input) => input.kind === 'direction' && String(input.value) === motion.sequence[0],
+    const first = match.matched[0];
+    const durationMs = Math.max(0, buttonInput.timestamp - first.timestamp);
+    const durationFrames = Math.max(0, buttonInput.frame - first.frame);
+    if (durationFrames > definition.maxDurationFrames) continue;
+
+    const grade = gradeExecution(
+      durationMs,
+      durationFrames,
+      definition,
+      match.extraDirections,
     );
 
     return {
-      id: `${buttonInput.id}-${motion.sequence}`,
-      notation: `${motion.sequence}${button}`,
-      motion: motion.name,
+      id: `${buttonInput.id}-${definition.id}`,
+      notation: `${definition.notation}${button}`,
+      motion: definition.name,
       button,
       timestamp: buttonInput.timestamp,
-      durationMs: Math.max(0, buttonInput.timestamp - (firstDirection?.timestamp ?? buttonInput.timestamp)),
+      frame: buttonInput.frame,
+      durationMs,
+      durationFrames,
+      confidence: Math.max(0.5, Math.min(1, grade.score / 100)),
+      extraDirections: match.extraDirections,
+      grade,
     };
   }
 
-  const latestDirection = [...recentInputs]
-    .reverse()
-    .find((input) => input.kind === 'direction')?.value as Direction | undefined;
-
-  return {
-    id: `${buttonInput.id}-normal`,
-    notation: `${latestDirection && latestDirection !== 5 ? latestDirection : ''}${button}`,
-    motion: latestDirection && latestDirection !== 5 ? 'Directional normal' : 'Standing normal',
-    button,
-    timestamp: buttonInput.timestamp,
-    durationMs: 0,
-  };
+  return null;
 }
