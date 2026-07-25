@@ -18,7 +18,7 @@ function collapseDirections(inputs: NormalizedInput[]): Direction[] {
   for (const input of inputs) {
     if (input.kind !== 'direction' || input.value === 5) continue;
     const direction = input.value as Direction;
-    if (directions.at(-1) !== direction) directions.push(direction);
+    if (directions[directions.length - 1] !== direction) directions.push(direction);
   }
 
   return directions;
