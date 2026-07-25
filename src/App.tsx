@@ -5,37 +5,99 @@ function App() {
 
   return (
     <main className="app-shell">
-      <section className="hero">
-        <p className="eyebrow">STREET FIGHTER 6 · TERRY</p>
-        <h1>FightLab</h1>
-        <p className="subtitle">Controller-first execution training.</p>
-      </section>
-
-      <section className="panel status-panel">
+      <header className="topbar">
         <div>
-          <p className="panel-label">Controller</p>
-          <h2>{connected ? 'Connected' : 'Waiting for input'}</h2>
-          <p className="muted">
-            {gamepadName ?? 'Connect a controller and press any button.'}
-          </p>
+          <p className="brand-kicker">Execution training</p>
+          <h1>FightLab</h1>
         </div>
-        <span className={connected ? 'status-dot online' : 'status-dot'} />
+
+        <div className="controller-badge" aria-live="polite">
+          <span className={connected ? 'status-dot online' : 'status-dot'} />
+          <div>
+            <strong>{connected ? 'Controller connected' : 'Controller offline'}</strong>
+            <span>{gamepadName ?? 'Press any controller button'}</span>
+          </div>
+        </div>
+      </header>
+
+      <section className="dashboard-grid">
+        <section className="panel session-panel">
+          <div className="panel-heading">
+            <div>
+              <p className="panel-label">Today&apos;s session</p>
+              <h2>Training setup</h2>
+            </div>
+            <span className="session-pill">Ready</span>
+          </div>
+
+          <div className="field-grid">
+            <label>
+              <span>Character</span>
+              <select defaultValue="Terry">
+                <option>Terry</option>
+                <option>Ken</option>
+                <option>Ryu</option>
+                <option>Akuma</option>
+              </select>
+            </label>
+
+            <label>
+              <span>Drill</span>
+              <select defaultValue="Combo Trainer">
+                <option>Combo Trainer</option>
+                <option>Hit Confirm Trainer</option>
+                <option>Anti-Air Trainer</option>
+                <option>Whiff Punish Trainer</option>
+              </select>
+            </label>
+          </div>
+
+          <button className="primary-action" type="button">
+            Start training
+          </button>
+        </section>
+
+        <section className="panel stats-panel">
+          <div>
+            <p className="panel-label">Today&apos;s stats</p>
+            <h2>Session overview</h2>
+          </div>
+
+          <dl className="stats-grid">
+            <div>
+              <dt>Accuracy</dt>
+              <dd>--</dd>
+            </div>
+            <div>
+              <dt>Reaction</dt>
+              <dd>--</dd>
+            </div>
+            <div>
+              <dt>Successes</dt>
+              <dd>0</dd>
+            </div>
+            <div>
+              <dt>Drops</dt>
+              <dd>0</dd>
+            </div>
+          </dl>
+        </section>
       </section>
 
-      <section className="panel">
+      <section className="panel input-panel">
         <div className="panel-heading">
           <div>
             <p className="panel-label">Live feed</p>
-            <h2>Input History</h2>
+            <h2>Input history</h2>
           </div>
-          <button type="button" onClick={clearInputs} disabled={inputs.length === 0}>
+          <button className="secondary-action" type="button" onClick={clearInputs} disabled={inputs.length === 0}>
             Clear
           </button>
         </div>
 
         {inputs.length === 0 ? (
           <div className="empty-state">
-            <strong>No inputs yet.</strong>
+            <strong>No inputs yet</strong>
             <span>Directions will appear as numpad notation.</span>
           </div>
         ) : (
