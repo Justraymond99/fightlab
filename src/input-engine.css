@@ -1,0 +1,150 @@
+.diagnostics-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.direction-readout {
+  display: grid;
+  width: 3.25rem;
+  height: 3.25rem;
+  place-items: center;
+  border: 1px solid #ff6a3d;
+  border-radius: 0.9rem;
+  color: #fff;
+  background: rgba(255, 106, 61, 0.12);
+  font-size: 1.4rem;
+  font-weight: 900;
+}
+
+.latest-command {
+  display: grid;
+  gap: 0.35rem;
+  min-height: 135px;
+  margin-top: 1rem;
+  padding: 1.25rem;
+  align-content: center;
+  border: 1px solid #303540;
+  border-radius: 1rem;
+  background: #13161b;
+}
+
+.latest-command strong {
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  letter-spacing: -0.06em;
+}
+
+.latest-command span,
+.latest-command small,
+.compact-empty,
+.command-list span,
+.command-list small,
+.input-kind {
+  color: #8f96a3;
+}
+
+.empty-command strong {
+  color: #555c67;
+}
+
+.diagnostics-list {
+  display: grid;
+  gap: 0;
+  margin: 1.25rem 0 0;
+}
+
+.diagnostics-list div {
+  display: grid;
+  grid-template-columns: 130px minmax(0, 1fr);
+  gap: 1rem;
+  padding: 0.8rem 0;
+  border-top: 1px solid #242832;
+}
+
+.diagnostics-list dt {
+  color: #8f96a3;
+  font-size: 0.78rem;
+}
+
+.diagnostics-list dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 0.78rem;
+  text-align: right;
+}
+
+.compact-empty {
+  display: grid;
+  min-height: 145px;
+  place-items: center;
+  text-align: center;
+}
+
+.command-list {
+  display: grid;
+  gap: 0.6rem;
+  max-height: 230px;
+  margin: 1rem 0 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.command-list li {
+  display: grid;
+  grid-template-columns: minmax(80px, auto) 1fr auto;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.8rem;
+  border: 1px solid #242832;
+  border-radius: 0.8rem;
+  background: #13161b;
+}
+
+.command-list strong {
+  color: #ff805b;
+  font-size: 1rem;
+}
+
+.command-list small,
+.input-kind {
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 0.72rem;
+}
+
+.input-list li {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+}
+
+.input-kind {
+  text-transform: capitalize;
+}
+
+@media (max-width: 760px) {
+  .diagnostics-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 520px) {
+  .command-list li {
+    grid-template-columns: 1fr auto;
+  }
+
+  .command-list span {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  .diagnostics-list div {
+    grid-template-columns: 1fr;
+    gap: 0.35rem;
+  }
+
+  .diagnostics-list dd {
+    text-align: left;
+  }
+}
