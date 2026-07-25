@@ -19,9 +19,10 @@
 }
 
 .latest-command {
+  position: relative;
   display: grid;
   gap: 0.35rem;
-  min-height: 135px;
+  min-height: 170px;
   margin-top: 1rem;
   padding: 1.25rem;
   align-content: center;
@@ -33,6 +34,29 @@
 .latest-command strong {
   font-size: clamp(2rem, 5vw, 3.5rem);
   letter-spacing: -0.06em;
+}
+
+.latest-command p {
+  margin: 0.45rem 0 0;
+  color: #c6cbd3;
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+.command-grade {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  display: grid;
+  width: 2.75rem;
+  height: 2.75rem;
+  place-items: center;
+  border: 1px solid rgba(55, 214, 122, 0.35);
+  border-radius: 0.8rem;
+  color: #70e5a1;
+  background: rgba(55, 214, 122, 0.1);
+  font-size: 1.2rem;
+  font-weight: 950;
 }
 
 .latest-command span,
@@ -85,7 +109,7 @@
 .command-list {
   display: grid;
   gap: 0.6rem;
-  max-height: 230px;
+  max-height: 260px;
   margin: 1rem 0 0;
   padding: 0;
   overflow-y: auto;
@@ -94,13 +118,24 @@
 
 .command-list li {
   display: grid;
-  grid-template-columns: minmax(80px, auto) 1fr auto;
+  grid-template-columns: 2.25rem minmax(80px, auto) 1fr auto;
   align-items: center;
-  gap: 1rem;
+  gap: 0.75rem;
   padding: 0.8rem;
   border: 1px solid #242832;
   border-radius: 0.8rem;
   background: #13161b;
+}
+
+.history-grade {
+  display: grid;
+  width: 2.1rem;
+  height: 2.1rem;
+  place-items: center;
+  border-radius: 0.65rem;
+  color: #70e5a1 !important;
+  background: rgba(55, 214, 122, 0.1);
+  font-weight: 900;
 }
 
 .command-list strong {
@@ -131,11 +166,11 @@
 
 @media (max-width: 520px) {
   .command-list li {
-    grid-template-columns: 1fr auto;
+    grid-template-columns: 2.25rem 1fr auto;
   }
 
-  .command-list span {
-    grid-column: 1 / -1;
+  .command-list li > span:not(.history-grade) {
+    grid-column: 2 / -1;
     grid-row: 2;
   }
 
@@ -146,5 +181,10 @@
 
   .diagnostics-list dd {
     text-align: left;
+  }
+
+  .latest-command {
+    min-height: 190px;
+    padding: 1rem;
   }
 }
